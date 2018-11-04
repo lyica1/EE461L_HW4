@@ -8,6 +8,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +34,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
+import java.util.Random;
+import java.util.Stack;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -38,6 +44,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String apikey = "AIzaSyChn-RpJN3LRsidRA-KeIipfW8hrUgw1Qk";
     private double lat;
     private double lng;
+    private Button lucky;
+    private Button back;
+    private Date date = new Date();
+    private Random ran = new Random(date.getTime());
+    private Stack<LatLng> history = new Stack<LatLng>();
+
     private Marker current;
 
     @Override
@@ -50,7 +62,28 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+        lucky = (Button) findViewById(R.id.button);
+        lucky.setOnTouchListener(new View.OnTouchListener() {
 
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN ) {
+                    goRandom(mMap);
+                }
+                return false;
+            }
+        });
+        back = findViewById(R.id.button2);
+        back.setOnTouchListener(new View.OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN ) {
+                    back(mMap);
+                }
+                return false;
+            }
+        });
     }
 
 
@@ -72,6 +105,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         current = mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
+
+    public void goRandom(GoogleMap googleMap){
+        mMap = googleMap;
+
+        // Add a marker in Sydney and move the camera
+        LatLng random = new LatLng(-90 + ran.nextInt(179), -180 + ran.nextInt(360));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(random, 4));
+        history.push(random);
+        current.remove();
+        current = mMap.addMarker(new MarkerOptions().position(random).title("Marker in Sydney"));
+    }
+
+    public void back(GoogleMap googleMap){
+        mMap = googleMap;
+        if(history.size() < 2){
+            return;
+        }
+        history.pop();
+        LatLng past = history.peek();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(past, 4));
+        current.remove();
+        current = mMap.addMarker(new MarkerOptions().position(past).title("hello"));
+    }
+
     class BackGround extends AsyncTask<String, Void, String>{
         @Override
         protected void onPreExecute(){
